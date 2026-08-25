@@ -15,9 +15,7 @@ return new class extends Migration {
             $table->enum('role', [
                 'admin',
                 'petugas_loket',
-                'pengecekan_kehilangan',
                 'kutipan_kedua',
-                'banjir_kepolisian',
                 'keabsahan',
                 'surat_pengantar'
             ])->default('petugas_loket');

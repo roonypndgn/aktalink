@@ -2,85 +2,127 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use HasFactory, Notifiable;
 
+    /**
+     * The attributes that are mass assignable.
+     */
     protected $fillable = [
         'name',
         'username',
         'password',
         'role',
         'phone',
-        'photo',
         'is_active',
         'last_login_at',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'password' => 'hashed',
-            'is_active' => 'boolean',
-            'last_login_at' => 'datetime',
-        ];
-    }
+    /**
+     * The attributes that should be cast.
+     */
+    protected $casts = [
+        'is_active' => 'boolean',
+        'last_login_at' => 'datetime',
+    ];
 
-    public function permohonanDibuat()
+    /**
+     * Relasi ke Permohonan (sebagai petugas loket)
+     */
+    public function permohonanLoket(): HasMany
     {
         return $this->hasMany(Permohonan::class, 'petugas_loket_id');
     }
 
-    public function dokumenDiunggah()
+    /**
+     * Relasi ke PermohonanPetugas (sebagai petugas penanganan)
+     */
+    public function penangananPermohonan(): HasMany
     {
-        return $this->hasMany(PermohonanDokumen::class, 'uploaded_by');
+        return $this->hasMany(PermohonanPetugas::class, 'user_id');
     }
 
-    public function dokumenDiverifikasi()
+    /**
+     * Accessor untuk label role
+     */
+    public function getRoleLabelAttribute(): string
     {
-        return $this->hasMany(PermohonanDokumen::class, 'verified_by');
+        $labels = [
+            'admin' => 'Administrator',
+            'petugas_loket' => 'Petugas Loket',
+            'pengecekan_kehilangan' => 'Pengecekan Kehilangan',
+            'kutipan_kedua' => 'Kutipan Kedua',
+            'banjir_kepolisian' => 'Banjir Kepolisian',
+            'keabsahan' => 'Keabsahan',
+            'surat_pengantar' => 'Surat Pengantar',
+        ];
+
+        return $labels[$this->role] ?? $this->role;
     }
 
-    public function penugasan()
+    /**
+     * Accessor untuk warna role
+     */
+    public function getRoleColorAttribute(): string
     {
-        return $this->hasMany(PermohonanPetugas::class);
+        $colors = [
+            'admin' => '#07573c',
+            'petugas_loket' => '#2563eb',
+            'kutipan_kedua' => '#8b5cf6',
+            'keabsahan' => '#06b6d4',
+            'surat_pengantar' => '#10b981',
+        ];
+
+        return $colors[$this->role] ?? '#6b7280';
     }
 
-    public function permohonanDitugaskan()
+
+    /**
+     * Scope untuk pencarian
+     */
+    public function scopeSearch($query, $search)
     {
-        return $this->hasMany(PermohonanPetugas::class, 'assigned_by');
+        if (empty($search)) return $query;
+
+        return $query->where('name', 'like', "%{$search}%")
+                     ->orWhere('username', 'like', "%{$search}%")
+                     ->orWhere('phone', 'like', "%{$search}%")
+                     ->orWhere('role', 'like', "%{$search}%");
     }
 
-    public function riwayatStatus()
+    /**
+     * Scope untuk filter role
+     */
+    public function scopeFilterRole($query, $role)
     {
-        return $this->hasMany(RiwayatStatus::class, 'changed_by');
+        if ($role) {
+            return $query->where('role', $role);
+        }
+        return $query;
     }
 
-    public function hasilPemeriksaan()
+    /**
+     * Scope untuk filter status
+     */
+    public function scopeFilterStatus($query, $status)
     {
-        return $this->hasMany(HasilPemeriksaan::class, 'diperiksa_oleh');
-    }
-
-    public function komentar()
-    {
-        return $this->hasMany(KomentarPermohonan::class);
-    }
-
-    public function notifikasi()
-    {
-        return $this->hasMany(Notifikasi::class);
-    }
-
-    public function aktivitasLog()
-    {
-        return $this->hasMany(AktivitasLog::class);
+        if ($status !== null && $status !== '') {
+            return $query->where('is_active', $status);
+        }
+        return $query;
     }
 }

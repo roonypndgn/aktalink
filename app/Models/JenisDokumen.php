@@ -3,12 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JenisDokumen extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'nama_dokumen',
         'kode_dokumen',
@@ -16,19 +14,11 @@ class JenisDokumen extends Model
         'is_active',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'is_active' => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 
-    public function persyaratanLayanan()
-    {
-        return $this->hasMany(LayananPersyaratan::class);
-    }
-
-    public function dokumenPermohonan()
+    public function permohonanDokumens(): HasMany
     {
         return $this->hasMany(PermohonanDokumen::class);
     }

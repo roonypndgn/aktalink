@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PermohonanPetugas extends Model
 {
-    use HasFactory;
+    protected $table = 'permohonan_petugas';
 
     protected $fillable = [
         'permohonan_id',
@@ -20,27 +20,24 @@ class PermohonanPetugas extends Model
         'keterangan',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'assigned_at' => 'datetime',
-            'accepted_at' => 'datetime',
-            'finished_at' => 'datetime',
-            'is_active' => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'assigned_at' => 'datetime',
+        'accepted_at' => 'datetime',
+        'finished_at' => 'datetime',
+        'is_active' => 'boolean',
+    ];
 
-    public function permohonan()
+    public function permohonan(): BelongsTo
     {
         return $this->belongsTo(Permohonan::class);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function assignedBy()
+    public function assignedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
     }

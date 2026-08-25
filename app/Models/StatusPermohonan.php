@@ -1,14 +1,11 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StatusPermohonan extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'nama_status',
         'kode_status',
@@ -17,25 +14,33 @@ class StatusPermohonan extends Model
         'is_active',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'is_active' => 'boolean',
+        'urutan' => 'integer',
+    ];
+
+    /**
+     * Relasi ke Permohonan
+     */
+    public function permohonans(): HasMany
     {
-        return [
-            'is_active' => 'boolean',
-        ];
+        return $this->hasMany(Permohonan::class, 'status_permohonan_id');
     }
 
-    public function permohonan()
+    /**
+     * Scope untuk data aktif
+     */
+    public function scopeActive($query)
     {
-        return $this->hasMany(Permohonan::class);
+        return $query->where('is_active', true);
     }
 
-    public function riwayatStatusLama()
+    /**
+     * Scope untuk pencarian
+     */
+    public function scopeSearch($query, $search)
     {
-        return $this->hasMany(RiwayatStatus::class, 'status_lama_id');
-    }
-
-    public function riwayatStatusBaru()
-    {
-        return $this->hasMany(RiwayatStatus::class, 'status_baru_id');
+        return $query->where('nama_status', 'like', "%{$search}%")
+                     ->orWhere('kode_status', 'like', "%{$search}%");
     }
 }

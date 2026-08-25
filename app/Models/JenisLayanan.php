@@ -3,12 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JenisLayanan extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'nama_layanan',
         'kode_layanan',
@@ -17,25 +15,33 @@ class JenisLayanan extends Model
         'is_active',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    /**
+     * Relasi ke Permohonan
+     */
+    public function permohonans(): HasMany
     {
-        return [
-            'is_active' => 'boolean',
-        ];
+        return $this->hasMany(Permohonan::class, 'jenis_layanan_id');
     }
 
-    public function permohonan()
+    /**
+     * Scope untuk data aktif
+     */
+    public function scopeActive($query)
     {
-        return $this->hasMany(Permohonan::class);
+        return $query->where('is_active', true);
     }
 
-    public function persyaratan()
+    /**
+     * Scope untuk pencarian
+     */
+    public function scopeSearch($query, $search)
     {
-        return $this->hasMany(LayananPersyaratan::class);
-    }
-
-    public function statusHasil()
-    {
-        return $this->hasMany(StatusHasil::class);
+        return $query->where('nama_layanan', 'like', "%{$search}%")
+                     ->orWhere('kode_layanan', 'like', "%{$search}%")
+                     ->orWhere('deskripsi', 'like', "%{$search}%");
     }
 }
