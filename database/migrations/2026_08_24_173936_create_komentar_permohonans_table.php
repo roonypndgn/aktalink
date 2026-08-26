@@ -23,6 +23,10 @@ return new class extends Migration {
             $table->boolean('is_internal')->default(true);
 
             $table->timestamps();
+
+            // Index untuk performa
+            $table->index('permohonan_id');
+            $table->index('user_id');
         });
     }
 

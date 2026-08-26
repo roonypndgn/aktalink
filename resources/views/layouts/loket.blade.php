@@ -1054,31 +1054,6 @@
                                 <span class="nav-text">Semua Permohonan</span>
                             </a>
                         </li>
-
-                        {{-- PERLU DITERUSKAN --}}
-                        <li class="nav-item">
-                            <a href="#" class="nav-link {{ request()->routeIs('loket.permohonan.diteruskan') ? 'active' : '' }}">
-                                <i class="nav-icon" data-lucide="send"></i>
-                                <span class="nav-text">Perlu Diteruskan</span>
-                            </a>
-                        </li>
-
-                        {{-- SEDANG DIPROSES --}}
-                        <li class="nav-item">
-                            <a href="#" class="nav-link {{ request()->routeIs('loket.permohonan.proses') ? 'active' : '' }}">
-                                <i class="nav-icon" data-lucide="clock"></i>
-                                <span class="nav-text">Sedang Diproses</span>
-                            </a>
-                        </li>
-
-                        {{-- SELESAI --}}
-                        <li class="nav-item">
-                            <a href="#" class="nav-link {{ request()->routeIs('loket.permohonan.selesai') ? 'active' : '' }}">
-                                <i class="nav-icon" data-lucide="check-circle"></i>
-                                <span class="nav-text">Selesai</span>
-                            </a>
-                        </li>
-
                     </ul>
                 </div>
 
@@ -1089,7 +1064,7 @@
 
                         {{-- TRACKING --}}
                         <li class="nav-item">
-                            <a href="#" class="nav-link {{ request()->routeIs('loket.tracking.*') ? 'active' : '' }}">
+                            <a href="{{ route('loket.tracking.index') }}" class="nav-link {{ request()->routeIs('loket.tracking.*') ? 'active' : '' }}">
                                 <i class="nav-icon" data-lucide="search-check"></i>
                                 <span class="nav-text">Tracking</span>
                             </a>
@@ -1216,7 +1191,7 @@
                             <ul class="profile-menu-list">
 
                                 <li>
-                                    <a href="#" class="profile-menu-link">
+                                    <a href="{{ route('loket.profile.index') }}" class="profile-menu-link">
                                         <i data-lucide="user-round"></i>
                                         Profil Saya
                                     </a>

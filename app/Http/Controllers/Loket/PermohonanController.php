@@ -12,6 +12,7 @@ use App\Models\RiwayatStatus;
 use App\Models\PermohonanPetugas;
 use App\Models\PermohonanDokumen;
 use App\Models\JenisDokumen;
+use App\Traits\LogsActivity; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -20,8 +21,9 @@ use Illuminate\Support\Facades\Storage;
 
 class PermohonanController extends Controller
 {
+    use LogsActivity;
     /**
-     * Display a listing of all permohonan.
+     * Display a listing of permohonan.
      */
     public function index(Request $request)
     {
@@ -67,7 +69,7 @@ class PermohonanController extends Controller
     }
 
     /**
-     * Store a newly created permohonan (TANPA DOKUMEN).
+     * Store a newly created permohonan.
      */
     public function store(Request $request)
     {
@@ -114,9 +116,7 @@ class PermohonanController extends Controller
                 'changed_at' => now(),
             ]);
 
-            // ============================================
-            // DISTRIBUSI OTOMATIS
-            // ============================================
+            // Distribusi otomatis
             $distribusiStatus = 'tidak_dikirim';
             $petugasTujuan = null;
 
@@ -185,11 +185,20 @@ class PermohonanController extends Controller
     }
 
     /**
- * UPLOAD DOKUMEN - DENGAN LOGGING DETAIL
+     * UPLOAD DOKUMEN - FIXED VERSION
+     */
+// app/Http/Controllers/Loket/PermohonanController.php
+
+/**
+ * UPLOAD DOKUMEN - FINAL FIXED VERSION
  */
 public function uploadDokumen(Request $request, Permohonan $permohonan)
 {
     try {
+        Log::info('=== UPLOAD DOKUMEN ===');
+        Log::info('Permohonan ID: ' . $permohonan->id);
+        Log::info('User ID: ' . auth()->id());
+
         // VALIDASI
         $validator = Validator::make($request->all(), [
             'dokumen' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
@@ -198,13 +207,16 @@ public function uploadDokumen(Request $request, Permohonan $permohonan)
         ]);
 
         if ($validator->fails()) {
+            Log::error('Validasi gagal: ', $validator->errors()->toArray());
             return response()->json([
                 'success' => false,
                 'errors' => $validator->errors()
             ], 422);
         }
 
+        // CEK FILE
         if (!$request->hasFile('dokumen')) {
+            Log::error('Tidak ada file yang diupload');
             return response()->json([
                 'success' => false,
                 'message' => 'Tidak ada file yang diupload.'
@@ -213,162 +225,193 @@ public function uploadDokumen(Request $request, Permohonan $permohonan)
 
         $file = $request->file('dokumen');
         
+        // CEK APAKAH FILE VALID
         if (!$file->isValid()) {
+            Log::error('File tidak valid. Error: ' . $file->getError());
             return response()->json([
                 'success' => false,
-                'message' => 'File tidak valid.'
+                'message' => 'File tidak valid. Error code: ' . $file->getError()
             ], 422);
         }
 
         // ============================================
-        // SIMPAN KE PUBLIC FOLDER LANGSUNG
+        // SIMPAN FILE - MENGGUNAKAN STORE() LANGSUNG
         // ============================================
         $namaDokumen = $request->nama_dokumen ?? $file->getClientOriginalName();
         $jenisDokumenId = $request->jenis_dokumen_id ?? null;
 
-        $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-        $filePath = 'uploads/dokumen/' . $permohonan->id;
+        // Buat nama file unik
+        $extension = $file->getClientOriginalExtension();
+        $fileName = time() . '_' . uniqid() . '.' . $extension;
+        
+        // Tentukan path di storage/public
+        $path = 'permohonan/' . $permohonan->id . '/dokumen';
+        
+        Log::info('Path: ' . $path);
+        Log::info('File name: ' . $fileName);
+        Log::info('File size: ' . $file->getSize());
+        Log::info('File mime: ' . $file->getMimeType());
 
-        // Buat folder di public
-        $directory = public_path($filePath);
-        if (!file_exists($directory)) {
-            mkdir($directory, 0777, true);
+        // ============================================
+        // METHOD 1: Gunakan store() - Paling Aman
+        // ============================================
+        try {
+            $stored = $file->store($path, 'public');
+            Log::info('File tersimpan dengan store(): ' . $stored);
+        } catch (\Exception $e) {
+            Log::error('store() gagal: ' . $e->getMessage());
+            $stored = null;
         }
 
-        // Pindahkan file ke public folder
-        $file->move($directory, $fileName);
+        // ============================================
+        // METHOD 2: Gunakan storeAs() - Fallback
+        // ============================================
+        if (!$stored) {
+            try {
+                $stored = $file->storeAs($path, $fileName, 'public');
+                Log::info('File tersimpan dengan storeAs(): ' . $stored);
+            } catch (\Exception $e) {
+                Log::error('storeAs() gagal: ' . $e->getMessage());
+                $stored = null;
+            }
+        }
 
-        // Cek apakah file berhasil
-        if (!file_exists($directory . '/' . $fileName)) {
+        // ============================================
+        // METHOD 3: Gunakan Storage facade - Fallback
+        // ============================================
+        if (!$stored) {
+            try {
+                $stored = Storage::disk('public')->putFileAs($path, $file, $fileName);
+                Log::info('File tersimpan dengan Storage::putFileAs(): ' . $stored);
+            } catch (\Exception $e) {
+                Log::error('Storage::putFileAs() gagal: ' . $e->getMessage());
+                $stored = null;
+            }
+        }
+
+        // ============================================
+        // METHOD 4: Manual Copy - Last Resort
+        // ============================================
+        if (!$stored) {
+            try {
+                // Buat folder
+                $destinationPath = storage_path('app/public/' . $path);
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0777, true);
+                }
+                
+                $fullPath = $destinationPath . '/' . $fileName;
+                
+                // Baca file content dari temporary
+                $content = file_get_contents($file->getRealPath());
+                if ($content !== false) {
+                    file_put_contents($fullPath, $content);
+                    if (file_exists($fullPath)) {
+                        $stored = $path . '/' . $fileName;
+                        Log::info('File tersimpan dengan manual copy: ' . $stored);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Manual copy gagal: ' . $e->getMessage());
+            }
+        }
+
+        if (!$stored) {
+            Log::error('Semua method gagal menyimpan file');
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyimpan file.'
+                'message' => 'Gagal menyimpan file. Silakan coba lagi.'
             ], 500);
         }
 
-        // Simpan ke database (path relatif dari public)
+        // CEK APAKAH FILE BERHASIL
+        $fullPathCheck = storage_path('app/public/' . $stored);
+        if (!file_exists($fullPathCheck)) {
+            Log::error('File tidak ditemukan setelah disimpan: ' . $fullPathCheck);
+            return response()->json([
+                'success' => false,
+                'message' => 'File gagal disimpan.'
+            ], 500);
+        }
+
+        Log::info('File berhasil disimpan di: ' . $stored);
+
+        // ============================================
+        // SIMPAN KE DATABASE
+        // ============================================
         $dokumen = PermohonanDokumen::create([
             'permohonan_id' => $permohonan->id,
             'jenis_dokumen_id' => $jenisDokumenId,
             'nama_dokumen' => $namaDokumen,
             'file_name' => $fileName,
-            'file_path' => $filePath . '/' . $fileName,
+            'file_path' => $stored,
             'file_type' => $file->getMimeType(),
             'file_size' => $file->getSize(),
             'status_verifikasi' => 'menunggu',
             'uploaded_by' => auth()->id(),
         ]);
 
+        Log::info('Dokumen berhasil diupload', ['dokumen_id' => $dokumen->id]);
+
         return response()->json([
             'success' => true,
             'message' => 'Dokumen berhasil diupload!',
-            'data' => $dokumen
+            'data' => $dokumen,
+            'file_url' => asset('storage/' . $stored)
         ]);
 
     } catch (\Exception $e) {
         Log::error('Error upload: ' . $e->getMessage());
-        
+        Log::error('Stack trace: ' . $e->getTraceAsString());
         return response()->json([
             'success' => false,
             'message' => 'Terjadi kesalahan: ' . $e->getMessage()
         ], 500);
     }
 }
-public function uploadDokumenSimple(Request $request, Permohonan $permohonan)
-{
-    // Validasi
-    $validator = Validator::make($request->all(), [
-        'dokumen' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
-        'nama_dokumen' => 'nullable|string|max:150',
-        'jenis_dokumen_id' => 'nullable|exists:jenis_dokumens,id',
-    ]);
 
-    if ($validator->fails()) {
-        return redirect()->back()
-            ->with('error', 'Validasi gagal: ' . $validator->errors()->first())
-            ->withInput();
-    }
-
-    try {
-        if (!$request->hasFile('dokumen')) {
-            return redirect()->back()->with('error', 'Tidak ada file yang diupload.');
-        }
-
-        $file = $request->file('dokumen');
-        
-        if (!$file->isValid()) {
-            return redirect()->back()->with('error', 'File tidak valid.');
-        }
-
-        // ============================================
-        // SIMPAN FILE KE PUBLIC FOLDER
-        // ============================================
-        $namaDokumen = $request->nama_dokumen ?? $file->getClientOriginalName();
-        $jenisDokumenId = $request->jenis_dokumen_id ?? null;
-
-        $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-        $filePath = 'uploads/dokumen/' . $permohonan->id;
-
-        // Buat folder
-        $directory = public_path($filePath);
-        if (!file_exists($directory)) {
-            mkdir($directory, 0777, true);
-        }
-
-        // Pindahkan file
-        $file->move($directory, $fileName);
-
-        // Simpan ke database
-        PermohonanDokumen::create([
-            'permohonan_id' => $permohonan->id,
-            'jenis_dokumen_id' => $jenisDokumenId,
-            'nama_dokumen' => $namaDokumen,
-            'file_name' => $fileName,
-            'file_path' => $filePath . '/' . $fileName,
-            'file_type' => $file->getMimeType(),
-            'file_size' => $file->getSize(),
-            'status_verifikasi' => 'menunggu',
-            'uploaded_by' => auth()->id(),
-        ]);
-
-        return redirect()->back()->with('success', 'Dokumen berhasil diupload!');
-
-    } catch (\Exception $e) {
-        Log::error('Error upload: ' . $e->getMessage());
-        return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-    }
-}
     /**
      * DELETE DOKUMEN
      */
     public function deleteDokumen(Permohonan $permohonan, $dokumenId)
-{
-    try {
-        $dokumen = PermohonanDokumen::where('permohonan_id', $permohonan->id)
-            ->where('id', $dokumenId)
-            ->first();
+    {
+        try {
+            $dokumen = PermohonanDokumen::where('permohonan_id', $permohonan->id)
+                ->where('id', $dokumenId)
+                ->first();
 
-        if (!$dokumen) {
-            return redirect()->back()->with('error', 'Dokumen tidak ditemukan.');
+            if (!$dokumen) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dokumen tidak ditemukan.'
+                ], 404);
+            }
+
+            // Hapus file dari storage
+            $fullPath = storage_path('app/public/' . $dokumen->file_path);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+                Log::info('File dihapus: ' . $fullPath);
+            }
+
+            $dokumen->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen berhasil dihapus!'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error delete dokumen: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Hapus file
-        $fullPath = public_path('storage/' . $dokumen->file_path);
-        if (file_exists($fullPath)) {
-            unlink($fullPath);
-        }
-
-        $dokumen->delete();
-
-        return redirect()->back()->with('success', 'Dokumen berhasil dihapus!');
-
-    } catch (\Exception $e) {
-        return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
     }
-}
 
     /**
-     * Display the specified permohonan.
+     * Display permohonan detail.
      */
     public function show(Permohonan $permohonan)
     {
@@ -382,17 +425,17 @@ public function uploadDokumenSimple(Request $request, Permohonan $permohonan)
             'riwayatStatus.statusLama',
             'riwayatStatus.statusBaru',
             'riwayatStatus.changedBy',
-            'hasilPemeriksaan.statusHasil',
-            'hasilPemeriksaan.diperiksaOleh',
+            'hasilPemeriksaan',
             'petugasPenanganan.user',
-            'petugasPenanganan.assignedBy',
         ]);
 
-        return view('loket.permohonan.show', compact('permohonan'));
+        $jenisDokumens = JenisDokumen::where('is_active', true)->get();
+
+        return view('loket.permohonan.show', compact('permohonan', 'jenisDokumens'));
     }
 
     /**
-     * Show the form for editing the specified permohonan.
+     * Edit permohonan.
      */
     public function edit(Permohonan $permohonan)
     {
@@ -410,7 +453,7 @@ public function uploadDokumenSimple(Request $request, Permohonan $permohonan)
     }
 
     /**
-     * Update the specified permohonan.
+     * Update permohonan.
      */
     public function update(Request $request, Permohonan $permohonan)
     {
@@ -481,12 +524,12 @@ public function uploadDokumenSimple(Request $request, Permohonan $permohonan)
     }
 
     /**
-     * Remove the specified permohonan.
+     * Delete permohonan.
      */
     public function destroy(Permohonan $permohonan)
     {
         try {
-            // Hapus semua dokumen
+            // Hapus semua file dokumen
             foreach ($permohonan->dokumen as $dokumen) {
                 $fullPath = storage_path('app/public/' . $dokumen->file_path);
                 if (file_exists($fullPath)) {
@@ -516,101 +559,24 @@ public function uploadDokumenSimple(Request $request, Permohonan $permohonan)
 
     public function perluDiteruskan(Request $request)
     {
-        $permohonans = Permohonan::with([
-            'pemohon',
-            'jenisLayanan',
-            'statusPermohonan',
-            'petugasLoket',
-            'dokumen'
-        ])
-        ->perluDiteruskan()
-        ->filter($request->all())
-        ->orderBy('created_at', 'desc')
-        ->paginate(10)
-        ->withQueryString();
-
-        $stats = [
-            'total' => Permohonan::count(),
-            'menunggu' => Permohonan::perluDiteruskan()->count(),
-            'proses' => Permohonan::sedangDiproses()->count(),
-            'selesai' => Permohonan::selesai()->count(),
-        ];
-
-        $statuses = StatusPermohonan::where('is_active', true)->get();
-        $layanans = JenisLayanan::where('is_active', true)->get();
-        $prioritas = ['normal', 'penting', 'urgent'];
-        $pemohons = Pemohon::orderBy('nama_lengkap')->get();
-        $jenisDokumens = JenisDokumen::where('is_active', true)->get();
-        $roleTujuan = JenisLayanan::where('is_active', true)->pluck('role_tujuan', 'id')->toArray();
-
-        return view('loket.permohonan.index', compact(
-            'permohonans',
-            'stats',
-            'statuses',
-            'layanans',
-            'prioritas',
-            'pemohons',
-            'jenisDokumens',
-            'roleTujuan'
-        ));
+        $permohonans = Permohonan::perluDiteruskan()->filter($request->all())->paginate(10);
+        return $this->renderIndex($request, $permohonans);
     }
 
     public function sedangDiproses(Request $request)
     {
-        $permohonans = Permohonan::with([
-            'pemohon',
-            'jenisLayanan',
-            'statusPermohonan',
-            'petugasLoket',
-            'dokumen'
-        ])
-        ->sedangDiproses()
-        ->filter($request->all())
-        ->orderBy('created_at', 'desc')
-        ->paginate(10)
-        ->withQueryString();
-
-        $stats = [
-            'total' => Permohonan::count(),
-            'menunggu' => Permohonan::perluDiteruskan()->count(),
-            'proses' => Permohonan::sedangDiproses()->count(),
-            'selesai' => Permohonan::selesai()->count(),
-        ];
-
-        $statuses = StatusPermohonan::where('is_active', true)->get();
-        $layanans = JenisLayanan::where('is_active', true)->get();
-        $prioritas = ['normal', 'penting', 'urgent'];
-        $pemohons = Pemohon::orderBy('nama_lengkap')->get();
-        $jenisDokumens = JenisDokumen::where('is_active', true)->get();
-        $roleTujuan = JenisLayanan::where('is_active', true)->pluck('role_tujuan', 'id')->toArray();
-
-        return view('loket.permohonan.index', compact(
-            'permohonans',
-            'stats',
-            'statuses',
-            'layanans',
-            'prioritas',
-            'pemohons',
-            'jenisDokumens',
-            'roleTujuan'
-        ));
+        $permohonans = Permohonan::sedangDiproses()->filter($request->all())->paginate(10);
+        return $this->renderIndex($request, $permohonans);
     }
 
     public function selesai(Request $request)
     {
-        $permohonans = Permohonan::with([
-            'pemohon',
-            'jenisLayanan',
-            'statusPermohonan',
-            'petugasLoket',
-            'dokumen'
-        ])
-        ->selesai()
-        ->filter($request->all())
-        ->orderBy('created_at', 'desc')
-        ->paginate(10)
-        ->withQueryString();
+        $permohonans = Permohonan::selesai()->filter($request->all())->paginate(10);
+        return $this->renderIndex($request, $permohonans);
+    }
 
+    private function renderIndex($request, $permohonans)
+    {
         $stats = [
             'total' => Permohonan::count(),
             'menunggu' => Permohonan::perluDiteruskan()->count(),
@@ -666,7 +632,7 @@ public function uploadDokumenSimple(Request $request, Permohonan $permohonan)
             if (!$petugas) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tidak ada petugas yang tersedia untuk layanan ini.'
+                    'message' => 'Tidak ada petugas yang tersedia.'
                 ], 422);
             }
 
@@ -694,7 +660,7 @@ public function uploadDokumenSimple(Request $request, Permohonan $permohonan)
                     'status_lama_id' => $oldStatusId,
                     'status_baru_id' => $statusDiteruskan->id,
                     'changed_by' => auth()->id(),
-                    'keterangan' => 'Permohonan diteruskan ke ' . $petugas->role_label . ' (' . $petugas->name . ')',
+                    'keterangan' => 'Permohonan diteruskan ke ' . $petugas->role_label,
                     'changed_at' => now(),
                 ]);
             }
@@ -703,7 +669,7 @@ public function uploadDokumenSimple(Request $request, Permohonan $permohonan)
 
             return response()->json([
                 'success' => true,
-                'message' => "Permohonan berhasil diteruskan ke {$petugas->name} (" . $petugas->role_label . ")",
+                'message' => "Permohonan berhasil diteruskan ke {$petugas->name}",
             ]);
 
         } catch (\Exception $e) {
@@ -741,7 +707,7 @@ public function uploadDokumenSimple(Request $request, Permohonan $permohonan)
         if (!$petugas) {
             return response()->json([
                 'success' => false,
-                'message' => 'Tidak ada petugas yang tersedia untuk layanan ini.'
+                'message' => 'Tidak ada petugas yang tersedia.'
             ]);
         }
 

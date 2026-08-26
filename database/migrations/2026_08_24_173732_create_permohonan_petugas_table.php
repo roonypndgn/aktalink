@@ -9,29 +9,14 @@ return new class extends Migration {
     {
         Schema::create('permohonan_petugas', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('permohonan_id')
-                ->constrained('permohonans')
-                ->cascadeOnDelete();
-
-            $table->foreignId('user_id')
-                ->constrained('users')
-                ->restrictOnDelete();
-
-            $table->foreignId('assigned_by')
-                ->constrained('users')
-                ->restrictOnDelete();
-
+            $table->foreignId('permohonan_id')->constrained('permohonans')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('assigned_by')->constrained('users')->restrictOnDelete();
             $table->timestamp('assigned_at')->useCurrent();
-
             $table->timestamp('accepted_at')->nullable();
-
             $table->timestamp('finished_at')->nullable();
-
             $table->boolean('is_active')->default(true);
-
             $table->text('keterangan')->nullable();
-
             $table->timestamps();
         });
     }

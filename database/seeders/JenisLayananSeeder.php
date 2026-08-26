@@ -1,4 +1,5 @@
 <?php
+
 namespace Database\Seeders;
 
 use App\Models\JenisLayanan;
@@ -6,9 +7,6 @@ use Illuminate\Database\Seeder;
 
 class JenisLayananSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $layanans = [

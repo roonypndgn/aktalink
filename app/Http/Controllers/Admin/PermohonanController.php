@@ -170,4 +170,37 @@ class PermohonanController extends Controller
 
         return $pdf->download('Detail_Permohonan_' . $permohonan->nomor_permohonan . '.pdf');
     }
+    public function pdfDetail(Permohonan $permohonan)
+{
+    $permohonan->load([
+        'pemohon',
+        'jenisLayanan',
+        'statusPermohonan',
+        'petugasLoket',
+        'dokumen.jenisDokumen',
+        'dokumen.uploadedBy',
+        'riwayatStatus.statusLama',
+        'riwayatStatus.statusBaru',
+        'riwayatStatus.changedBy',
+        'hasilPemeriksaan.statusHasil',
+        'hasilPemeriksaan.diperiksaOleh',
+        'petugasPenanganan.user',
+    ]);
+
+    $data = [
+        'permohonan' => $permohonan,
+        'generatedAt' => now()->format('d F Y H:i:s'),
+    ];
+
+    $pdf = Pdf::loadView('admin.permohonan.pdf-detail', $data);
+    $pdf->setPaper('A4', 'portrait');
+
+    $pdf->setOptions([
+        'defaultFont' => 'sans-serif',
+        'isHtml5ParserEnabled' => true,
+        'isRemoteEnabled' => true,
+    ]);
+
+    return $pdf->download('Detail_Permohonan_' . $permohonan->nomor_permohonan . '.pdf');
+}
 }

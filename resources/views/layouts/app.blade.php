@@ -998,9 +998,9 @@
                     </ul>
                 </div>
 
-                {{-- LAPORAN & RIWAYAT --}}
+                {{-- LAPORAN --}}
                 <div class="nav-section">
-                    <span class="nav-section-title">Laporan & Riwayat</span>
+                    <span class="nav-section-title">Laporan</span>
                     <ul class="nav-list">
 
                         {{-- LAPORAN --}}
@@ -1009,15 +1009,6 @@
                                class="nav-link {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
                                 <i class="nav-icon" data-lucide="file-bar-chart"></i>
                                 <span class="nav-text">Laporan & Statistik</span>
-                            </a>
-                        </li>
-
-                        {{-- RIWAYAT AKTIVITAS --}}
-                        <li class="nav-item">
-                            <a href="{{ route('admin.riwayat.index') }}"
-                               class="nav-link {{ request()->routeIs('admin.riwayat.*') ? 'active' : '' }}">
-                                <i class="nav-icon" data-lucide="history"></i>
-                                <span class="nav-text">Riwayat Aktivitas</span>
                             </a>
                         </li>
 

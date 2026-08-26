@@ -21,13 +21,6 @@
         </svg>
         Export PDF
     </button>
-    <button type="button" class="btn-outline" onclick="window.print()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 6 2 18 2 18 9"/>
-            <path d="M18 9H6M18 9a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2"/>
-            <rect x="8" y="14" width="8" height="6" rx="1"/>
-        </svg>
-    </button>
 @endsection
 
 @section('content')

@@ -73,6 +73,34 @@ class Permohonan extends Model
     {
         return $this->hasMany(PermohonanPetugas::class);
     }
+    /**
+     * Relasi ke komentar permohonan
+     */
+    public function komentar(): HasMany
+    {
+        return $this->hasMany(KomentarPermohonan::class)
+            ->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Relasi ke komentar internal
+     */
+    public function komentarInternal(): HasMany
+    {
+        return $this->hasMany(KomentarPermohonan::class)
+            ->where('is_internal', true)
+            ->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Relasi ke komentar eksternal
+     */
+    public function komentarEksternal(): HasMany
+    {
+        return $this->hasMany(KomentarPermohonan::class)
+            ->where('is_internal', false)
+            ->orderBy('created_at', 'desc');
+    }
 
     // =============================================
     // SCOPES
@@ -102,28 +130,8 @@ class Permohonan extends Model
         $query->when($filters['prioritas'] ?? null, function ($query, $prioritas) {
             $query->where('prioritas', $prioritas);
         });
-
-        $query->when($filters['date_from'] ?? null, function ($query, $date) {
-            $query->whereDate('tanggal_permohonan', '>=', $date);
-        });
-
-        $query->when($filters['date_to'] ?? null, function ($query, $date) {
-            $query->whereDate('tanggal_permohonan', '<=', $date);
-        });
     }
 
-    public function scopeCariNomor($query, $nomor)
-    {
-        return $query->where('nomor_permohonan', $nomor);
-    }
-
-    // =============================================
-    // SCOPES UNTUK STATUS
-    // =============================================
-
-    /**
-     * Scope untuk permohonan yang perlu diteruskan (Menunggu)
-     */
     public function scopePerluDiteruskan($query)
     {
         return $query->whereHas('statusPermohonan', function ($q) {
@@ -131,9 +139,6 @@ class Permohonan extends Model
         });
     }
 
-    /**
-     * Scope untuk permohonan yang sedang diproses
-     */
     public function scopeSedangDiproses($query)
     {
         return $query->whereHas('statusPermohonan', function ($q) {
@@ -141,9 +146,6 @@ class Permohonan extends Model
         });
     }
 
-    /**
-     * Scope untuk permohonan selesai
-     */
     public function scopeSelesai($query)
     {
         return $query->whereHas('statusPermohonan', function ($q) {
@@ -171,75 +173,6 @@ class Permohonan extends Model
             'penting' => 'Penting',
             default => 'Normal',
         };
-    }
-
-    public function getDurasiProsesAttribute(): ?string
-    {
-        if (!$this->tanggal_selesai) {
-            return null;
-        }
-
-        $diff = $this->tanggal_selesai->diff($this->tanggal_permohonan);
-        $days = $diff->days;
-
-        if ($days == 0) {
-            return 'Kurang dari 1 hari';
-        }
-
-        return $days . ' hari';
-    }
-
-    // =============================================
-    // FUNGSI DISTRIBUSI
-    // =============================================
-
-    /**
-     * Distribusikan permohonan ke petugas berdasarkan role tujuan
-     */
-    public function distribusikanKePetugas()
-    {
-        $layanan = $this->jenisLayanan;
-        if (!$layanan || !$layanan->role_tujuan) {
-            return null;
-        }
-
-        // Cari petugas dengan role tujuan yang aktif
-        $petugas = User::where('role', $layanan->role_tujuan)
-                       ->where('is_active', true)
-                       ->first();
-
-        if (!$petugas) {
-            return null;
-        }
-
-        // Buat penugasan
-        $penugasan = PermohonanPetugas::create([
-            'permohonan_id' => $this->id,
-            'user_id' => $petugas->id,
-            'assigned_by' => auth()->id(),
-            'assigned_at' => now(),
-            'is_active' => true,
-        ]);
-
-        // Update status menjadi DITERUSKAN
-        $statusDiteruskan = StatusPermohonan::where('kode_status', 'DITERUSKAN')->first();
-        if ($statusDiteruskan) {
-            $this->update([
-                'status_permohonan_id' => $statusDiteruskan->id,
-                'tanggal_diteruskan' => now(),
-            ]);
-
-            // Catat riwayat
-            RiwayatStatus::create([
-                'permohonan_id' => $this->id,
-                'status_baru_id' => $statusDiteruskan->id,
-                'changed_by' => auth()->id(),
-                'keterangan' => 'Permohonan diteruskan ke ' . $petugas->role_label,
-                'changed_at' => now(),
-            ]);
-        }
-
-        return $penugasan;
     }
 
     // =============================================

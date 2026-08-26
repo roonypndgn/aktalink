@@ -3,11 +3,13 @@ namespace App\Http\Controllers\Loket;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pemohon;
+use App\Traits\LogsActivity; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class PemohonController extends Controller
 {
+    use LogsActivity;
     /**
      * Display a listing of the resource.
      */

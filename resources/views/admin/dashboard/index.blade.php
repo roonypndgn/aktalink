@@ -40,7 +40,7 @@
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
                 </svg>
-                {{ now()->format('H:i') }} WIB
+                {{ now()->setTimezone('Asia/Jakarta')->format('H:i') }} WIB
             </span>
         </div>
     </div>
@@ -373,15 +373,6 @@
 
     {{-- Aktivitas Terbaru --}}
     <div class="recent-card">
-        <div class="recent-header">
-            <h5 class="recent-title">Aktivitas Terbaru</h5>
-            <a href="{{ route('admin.riwayat.index') }}" class="recent-link">
-                Lihat Semua
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </a>
-        </div>
         <div class="recent-body">
             @forelse($aktivitasTerbaru as $aktivitas)
             <div class="recent-item">
@@ -468,15 +459,6 @@
                 </svg>
             </div>
             <span>Jenis Layanan</span>
-        </a>
-        <a href="{{ route('admin.riwayat.index') }}" class="quick-item">
-            <div class="quick-icon" style="background: #f3e8ff; color: #6b21a8;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                </svg>
-            </div>
-            <span>Riwayat Aktivitas</span>
         </a>
     </div>
 </div>

@@ -9,28 +9,12 @@ return new class extends Migration {
     {
         Schema::create('riwayat_status', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('permohonan_id')
-                ->constrained('permohonans')
-                ->cascadeOnDelete();
-
-            $table->foreignId('status_lama_id')
-                ->nullable()
-                ->constrained('status_permohonans')
-                ->nullOnDelete();
-
-            $table->foreignId('status_baru_id')
-                ->constrained('status_permohonans')
-                ->restrictOnDelete();
-
-            $table->foreignId('changed_by')
-                ->constrained('users')
-                ->restrictOnDelete();
-
+            $table->foreignId('permohonan_id')->constrained('permohonans')->cascadeOnDelete();
+            $table->foreignId('status_lama_id')->nullable()->constrained('status_permohonans')->nullOnDelete();
+            $table->foreignId('status_baru_id')->constrained('status_permohonans')->restrictOnDelete();
+            $table->foreignId('changed_by')->constrained('users')->restrictOnDelete();
             $table->text('keterangan')->nullable();
-
             $table->timestamp('changed_at')->useCurrent();
-
             $table->timestamps();
         });
     }

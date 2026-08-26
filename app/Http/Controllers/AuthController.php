@@ -12,6 +12,7 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
+        // Jika sudah login, redirect ke dashboard berdasarkan role
         if (Auth::check()) {
             return redirect()->route($this->getDashboardRoute());
         }
@@ -62,6 +63,10 @@ class AuthController extends Controller
             
             $request->session()->regenerate();
             Auth::user()->update(['last_login_at' => now()]);
+            
+            // ✅ Tambahkan flash message
+            session()->flash('success', 'Selamat datang, ' . Auth::user()->name . '!');
+            
             return redirect()->route($this->getDashboardRoute());
         }
 
@@ -75,6 +80,8 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $user->update(['last_login_at' => now()]);
             
+            session()->flash('success', 'Selamat datang, ' . $user->name . '!');
+            
             return redirect()->route($this->getDashboardRoute());
         }
 
@@ -86,6 +93,8 @@ class AuthController extends Controller
             Auth::login($user, $request->boolean('remember'));
             $request->session()->regenerate();
             $user->update(['last_login_at' => now()]);
+            
+            session()->flash('success', 'Selamat datang, ' . $user->name . '!');
             
             return redirect()->route($this->getDashboardRoute());
         }
@@ -103,7 +112,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login')
+        return redirect()->route('public.tracking.index')
             ->with('success', 'Anda berhasil logout.');
     }
 

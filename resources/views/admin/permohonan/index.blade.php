@@ -16,13 +16,6 @@
         </svg>
         Export PDF
     </button>
-    <button onclick="window.print()" class="btn-outline">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 6 2 18 2 18 9"/>
-            <path d="M18 9H6M18 9a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2"/>
-            <rect x="8" y="14" width="8" height="6" rx="1"/>
-        </svg>
-    </button>
 @endsection
 
 @section('content')
@@ -218,8 +211,8 @@
                         </span>
                     </td>
                     <td class="col-tanggal">
-                        <span class="tanggal-date">{{ $permohonan->tanggal_permohonan->format('d M Y') }}</span>
-                        <span class="tanggal-time">{{ $permohonan->tanggal_permohonan->format('H:i') }}</span>
+                        <span class="tanggal-date">{{ $permohonan->tanggal_permohonan->setTimezone('Asia/Jakarta')->format('d M Y') }}</span>
+                        <span class="tanggal-time">{{ $permohonan->tanggal_permohonan->setTimezone('Asia/Jakarta')->format('H:i') }}</span>
                     </td>
                     <td class="col-aksi">
                         <div class="action-group">
@@ -229,16 +222,6 @@
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                                     <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                            </a>
-                            <a href="{{ route('admin.permohonan.pdf-detail', $permohonan) }}"
-                               class="action-btn pdf-btn"
-                               title="PDF" target="_blank">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
-                                    <line x1="12" y1="18" x2="12" y2="12"/>
-                                    <polyline points="9 15 12 18 15 15"/>
                                 </svg>
                             </a>
                         </div>
