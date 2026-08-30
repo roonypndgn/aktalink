@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\KutipanKedua;
 
 use App\Http\Controllers\Controller;
@@ -12,15 +11,17 @@ use App\Models\PermohonanDokumen;
 use App\Models\JenisDokumen;
 use App\Models\User;
 use App\Models\KomentarPermohonan;
-use App\Traits\LogsActivity; 
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class PermohonanController extends Controller
 {
     use LogsActivity;
+
     /**
      * Display a listing of permohonan.
      */
@@ -48,6 +49,7 @@ class PermohonanController extends Controller
         $layanans = JenisLayanan::where('is_active', true)->where('role_tujuan', 'kutipan_kedua')->get();
         $prioritas = ['normal', 'penting', 'urgent'];
         $pemohons = Pemohon::orderBy('nama_lengkap')->get();
+        $jenisDokumens = JenisDokumen::where('is_active', true)->get(); // ✅ TAMBAHKAN
 
         return view('kutipan-kedua.permohonan.index', compact(
             'permohonans',
@@ -55,7 +57,8 @@ class PermohonanController extends Controller
             'statuses',
             'layanans',
             'prioritas',
-            'pemohons'
+            'pemohons',
+            'jenisDokumens' // ✅ TAMBAHKAN
         ));
     }
 
@@ -88,6 +91,7 @@ class PermohonanController extends Controller
         $layanans = JenisLayanan::where('is_active', true)->where('role_tujuan', 'kutipan_kedua')->get();
         $prioritas = ['normal', 'penting', 'urgent'];
         $pemohons = Pemohon::orderBy('nama_lengkap')->get();
+        $jenisDokumens = JenisDokumen::where('is_active', true)->get(); // ✅ TAMBAHKAN
 
         return view('kutipan-kedua.permohonan.index', compact(
             'permohonans',
@@ -95,7 +99,8 @@ class PermohonanController extends Controller
             'statuses',
             'layanans',
             'prioritas',
-            'pemohons'
+            'pemohons',
+            'jenisDokumens' // ✅ TAMBAHKAN
         ));
     }
 
@@ -128,6 +133,7 @@ class PermohonanController extends Controller
         $layanans = JenisLayanan::where('is_active', true)->where('role_tujuan', 'kutipan_kedua')->get();
         $prioritas = ['normal', 'penting', 'urgent'];
         $pemohons = Pemohon::orderBy('nama_lengkap')->get();
+        $jenisDokumens = JenisDokumen::where('is_active', true)->get(); // ✅ TAMBAHKAN
 
         return view('kutipan-kedua.permohonan.index', compact(
             'permohonans',
@@ -135,7 +141,8 @@ class PermohonanController extends Controller
             'statuses',
             'layanans',
             'prioritas',
-            'pemohons'
+            'pemohons',
+            'jenisDokumens' // ✅ TAMBAHKAN
         ));
     }
 
@@ -168,6 +175,7 @@ class PermohonanController extends Controller
         $layanans = JenisLayanan::where('is_active', true)->where('role_tujuan', 'kutipan_kedua')->get();
         $prioritas = ['normal', 'penting', 'urgent'];
         $pemohons = Pemohon::orderBy('nama_lengkap')->get();
+        $jenisDokumens = JenisDokumen::where('is_active', true)->get(); // ✅ TAMBAHKAN
 
         return view('kutipan-kedua.permohonan.index', compact(
             'permohonans',
@@ -175,7 +183,8 @@ class PermohonanController extends Controller
             'statuses',
             'layanans',
             'prioritas',
-            'pemohons'
+            'pemohons',
+            'jenisDokumens' // ✅ TAMBAHKAN
         ));
     }
 
@@ -442,6 +451,163 @@ class PermohonanController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error proses permohonan: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // ============================================
+    // UPLOAD DOKUMEN - TAMBAHKAN
+    // ============================================
+
+    /**
+     * UPLOAD DOKUMEN - Optional
+     */
+    public function uploadDokumen(Request $request, Permohonan $permohonan)
+    {
+        try {
+            Log::info('=== UPLOAD DOKUMEN KUTIPAN KEDUA ===');
+            Log::info('Permohonan ID: ' . $permohonan->id);
+
+            // Cek apakah permohonan ini untuk kutipan kedua
+            if ($permohonan->jenisLayanan->role_tujuan !== 'kutipan_kedua') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses ke permohonan ini.'
+                ], 403);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'dokumen' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+                'nama_dokumen' => 'nullable|string|max:150',
+                'jenis_dokumen_id' => 'nullable|exists:jenis_dokumens,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Jika tidak ada file yang diupload, return error
+            if (!$request->hasFile('dokumen')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Silakan pilih file yang akan diupload.'
+                ], 422);
+            }
+
+            $file = $request->file('dokumen');
+            
+            if (!$file->isValid()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File tidak valid.'
+                ], 422);
+            }
+
+            $namaDokumen = $request->nama_dokumen ?? $file->getClientOriginalName();
+            $jenisDokumenId = $request->jenis_dokumen_id ?? null;
+
+            $extension = $file->getClientOriginalExtension();
+            $fileName = time() . '_' . uniqid() . '.' . $extension;
+            $path = 'permohonan/' . $permohonan->id . '/dokumen';
+
+            // Simpan file
+            $stored = Storage::disk('public')->putFileAs($path, $file, $fileName);
+
+            if (!$stored) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan file.'
+                ], 500);
+            }
+
+            // Simpan ke database
+            $dokumen = PermohonanDokumen::create([
+                'permohonan_id' => $permohonan->id,
+                'jenis_dokumen_id' => $jenisDokumenId,
+                'nama_dokumen' => $namaDokumen,
+                'file_name' => $fileName,
+                'file_path' => $stored,
+                'file_type' => $file->getMimeType(),
+                'file_size' => $file->getSize(),
+                'status_verifikasi' => 'menunggu',
+                'uploaded_by' => auth()->id(),
+            ]);
+
+            // ===== LOGGING =====
+            $this->logWithSubject(
+                'Upload dokumen (Kutipan Kedua)',
+                $dokumen,
+                'Dokumen: ' . $namaDokumen . ' | Permohonan: ' . $permohonan->nomor_permohonan
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen berhasil diupload!',
+                'data' => $dokumen,
+                'file_url' => asset('storage/' . $stored)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error upload dokumen kutipan kedua: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * DELETE DOKUMEN
+     */
+    public function deleteDokumen(Permohonan $permohonan, $dokumenId)
+    {
+        try {
+            // Cek apakah permohonan ini untuk kutipan kedua
+            if ($permohonan->jenisLayanan->role_tujuan !== 'kutipan_kedua') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses ke permohonan ini.'
+                ], 403);
+            }
+
+            $dokumen = PermohonanDokumen::where('permohonan_id', $permohonan->id)
+                ->where('id', $dokumenId)
+                ->first();
+
+            if (!$dokumen) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dokumen tidak ditemukan.'
+                ], 404);
+            }
+
+            // Hapus file dari storage
+            if ($dokumen->file_path && Storage::disk('public')->exists($dokumen->file_path)) {
+                Storage::disk('public')->delete($dokumen->file_path);
+            }
+
+            $dokumen->delete();
+
+            // ===== LOGGING =====
+            $this->logWithSubject(
+                'Menghapus dokumen (Kutipan Kedua)',
+                $dokumen,
+                'Dokumen: ' . $dokumen->nama_dokumen . ' | Permohonan: ' . $permohonan->nomor_permohonan
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen berhasil dihapus!'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error delete dokumen kutipan kedua: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()

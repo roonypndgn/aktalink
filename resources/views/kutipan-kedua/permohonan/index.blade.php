@@ -168,41 +168,51 @@
                         <div class="tanggal-time">{{ $permohonan->tanggal_permohonan->setTimezone('Asia/Jakarta')->format('H:i') }}</div>
                     </td>
                     <td>
-                        <div class="action-group">
-                            {{-- Detail --}}
-                            <a href="{{ route('kutipan-kedua.permohonan.show', $permohonan) }}" class="action-btn view-btn" title="Detail">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                            </a>
+    <div class="action-group">
+        {{-- Detail --}}
+        <a href="{{ route('kutipan-kedua.permohonan.show', $permohonan) }}" class="action-btn view-btn" title="Detail">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+        </a>
 
-                            {{-- Update Status --}}
-                            <button type="button" class="action-btn status-btn" onclick="openUpdateStatusModal({{ $permohonan->id }})" title="Update Status">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                </svg>
-                            </button>
+        {{-- Update Status --}}
+        <button type="button" class="action-btn status-btn" onclick="openUpdateStatusModal({{ $permohonan->id }})" title="Update Status">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+        </button>
 
-                            {{-- Tambah Komentar --}}
-                            <button type="button" class="action-btn comment-btn" onclick="openTambahKomentarModal({{ $permohonan->id }})" title="Tambah Komentar">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                </svg>
-                            </button>
+        {{-- Tambah Komentar --}}
+        <button type="button" class="action-btn comment-btn" onclick="openTambahKomentarModal({{ $permohonan->id }})" title="Tambah Komentar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+        </button>
 
-                            {{-- Proses (hanya untuk status DITERUSKAN) --}}
-                            @if($permohonan->statusPermohonan && $permohonan->statusPermohonan->kode_status === 'DITERUSKAN')
-                            <button type="button" class="action-btn proses-btn" onclick="openProsesModal({{ $permohonan->id }})" title="Proses">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <polyline points="12 6 12 12 16 14"/>
-                                </svg>
-                            </button>
-                            @endif
-                        </div>
-                    </td>
+        {{-- Upload Dokumen --}}
+        <button type="button" class="action-btn upload-btn" onclick="openUploadDokumenModal({{ $permohonan->id }})" title="Upload Dokumen">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="16 16 12 12 8 16"/>
+                <line x1="12" y1="12" x2="12" y2="21"/>
+                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                <polyline points="16 16 12 12 8 16"/>
+            </svg>
+        </button>
+
+        {{-- Proses (hanya untuk status DITERUSKAN) --}}
+        @if($permohonan->statusPermohonan && $permohonan->statusPermohonan->kode_status === 'DITERUSKAN')
+        <button type="button" class="action-btn proses-btn" onclick="openProsesModal({{ $permohonan->id }})" title="Proses">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+        </button>
+        @endif
+    </div>
+</td>
                 </tr>
                 @empty
                 <tr>
@@ -236,7 +246,86 @@
     </div>
     @endif
 </div>
+{{-- ============================================
+    MODAL UPLOAD DOKUMEN
+============================================ --}}
+<div class="modal-overlay" id="uploadDokumenModal" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-icon" style="background: #dbeafe; color: #2563eb;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </div>
+                <h4 class="modal-title">Upload Dokumen</h4>
+                <button type="button" class="modal-close" onclick="closeModal('uploadDokumenModal')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="uploadDokumenForm" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="form-group full-width">
+                        <label class="form-label">Pilih Dokumen <span class="text-danger">*</span></label>
+                        <div class="file-drop-zone" id="dropZone">
+                            <input type="file" name="dokumen" id="upload_dokumen_file" class="file-input" accept=".jpg,.jpeg,.png,.pdf" required>
+                            <div class="file-drop-content">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#07573c" stroke-width="1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                <p class="upload-text" id="uploadText">Klik atau drag file ke sini</p>
+                                <p class="upload-hint">Format: JPG, JPEG, PNG, PDF (Max 5MB)</p>
+                                <p class="upload-filename" id="uploadFileName" style="display:none;"></p>
+                            </div>
+                        </div>
+                        <span class="form-error" id="upload-error-dokumen"></span>
+                    </div>
 
+                    <div class="form-grid-upload">
+                        <div class="form-group">
+                            <label class="form-label">Nama Dokumen</label>
+                            <input type="text" name="nama_dokumen" id="upload_nama_dokumen" class="form-input" placeholder="Nama dokumen (opsional)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Jenis Dokumen</label>
+                            <select name="jenis_dokumen_id" id="upload_jenis_dokumen_id" class="form-select">
+                                <option value="">-- Pilih Jenis --</option>
+                                @if(isset($jenisDokumens) && $jenisDokumens->count() > 0)
+                                    @foreach($jenisDokumens as $jenis)
+                                    <option value="{{ $jenis->id }}">{{ $jenis->nama_dokumen }}</option>
+                                    @endforeach
+                                @else
+                                    <option value="">Jenis dokumen belum tersedia</option>
+                                @endif
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="uploadModalError" style="display:none;color:#dc2626;font-size:13px;margin-top:8px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('uploadDokumenModal')">Batal</button>
+                    <button type="submit" class="btn-primary" id="uploadDokumenSubmit">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                        Upload Dokumen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {{-- ============================================
     MODAL PROSES
 ============================================ --}}
@@ -401,7 +490,145 @@
     background: #d1fae5;
     color: #065f46;
 }
+.upload-btn:hover {
+    background: #dbeafe;
+    color: #2563eb;
+}
+/* ============================================
+   FILE DROP ZONE - STYLE
+============================================ */
+.file-drop-zone {
+    border: 2px dashed #dce2e0;
+    border-radius: 12px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #fafcfb;
+    position: relative;
+}
 
+.file-drop-zone:hover {
+    border-color: #07573c;
+    background: #f0f9f5;
+}
+
+.file-drop-zone .file-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+}
+
+.file-drop-zone.drag-over {
+    border-color: #07573c;
+    background: #f0f9f5;
+}
+
+.file-drop-zone .file-drop-content {
+    pointer-events: none;
+}
+
+.file-drop-zone .file-drop-content svg {
+    color: #07573c;
+}
+
+.file-drop-zone .upload-text {
+    margin-top: 8px;
+    font-weight: 500;
+    color: #1d2b27;
+}
+
+.file-drop-zone .upload-hint {
+    font-size: 12px;
+    color: #8a9a94;
+    margin-top: 2px;
+}
+
+.file-drop-zone .upload-filename {
+    font-weight: 600;
+    color: #07573c;
+    margin-top: 4px;
+}
+
+/* ============================================
+   FORM GRID UPLOAD
+============================================ */
+.form-grid-upload {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.form-grid-upload .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-grid-upload .form-group .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d2b27;
+}
+
+.form-grid-upload .form-group .form-input,
+.form-grid-upload .form-group .form-select {
+    padding: 10px 14px;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 13px;
+    background: #fafcfb;
+    color: #1d2b27;
+    width: 100%;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.form-grid-upload .form-group .form-input:focus,
+.form-grid-upload .form-group .form-select:focus {
+    outline: none;
+    border-color: #07573c;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(7, 87, 60, 0.08);
+}
+
+.form-grid-upload .form-group .form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a9a94' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+}
+
+.form-grid-upload .form-group .form-input::placeholder {
+    color: #b0c4bc;
+    font-weight: 400;
+}
+
+/* ============================================
+   RESPONSIVE MODAL UPLOAD
+============================================ */
+@media (max-width: 768px) {
+    .form-grid-upload {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .file-drop-zone {
+        padding: 20px 15px;
+    }
+
+    .file-drop-zone .file-drop-content svg {
+        width: 36px;
+        height: 36px;
+    }
+}
 /* ============================================
    FILTER
 ============================================ */
@@ -1048,7 +1275,185 @@ document.getElementById('prosesForm')?.addEventListener('submit', function(e) {
         submitBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Proses Permohonan';
     });
 });
+// ============================================
+// UPLOAD DOKUMEN
+// ============================================
+let uploadPermohonanId = null;
 
+function openUploadDokumenModal(id) {
+    uploadPermohonanId = id;
+    const form = document.getElementById('uploadDokumenForm');
+    if (form) {
+        form.reset();
+        form.action = `{{ url('kutipan-kedua/permohonan') }}/${id}/upload-dokumen`;
+    }
+    
+    // Reset drop zone
+    const dropZone = document.getElementById('dropZone');
+    if (dropZone) {
+        dropZone.style.borderColor = '#dce2e0';
+        dropZone.style.background = '#fafcfb';
+        dropZone.classList.remove('drag-over');
+    }
+    
+    document.getElementById('uploadFileName').style.display = 'none';
+    document.getElementById('uploadText').textContent = 'Klik atau drag file ke sini';
+    document.getElementById('uploadModalError').style.display = 'none';
+    
+    openModal('uploadDokumenModal');
+}
+
+document.getElementById('uploadDokumenForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('upload_dokumen_file');
+    const errorEl = document.getElementById('uploadModalError');
+    
+    // VALIDASI FILE
+    if (!fileInput.files || fileInput.files.length === 0) {
+        if (errorEl) {
+            errorEl.textContent = '⚠️ Pilih file dulu!';
+            errorEl.style.display = 'block';
+        }
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    
+    // VALIDASI UKURAN FILE
+    if (file.size > maxSize) {
+        if (errorEl) {
+            errorEl.textContent = '⚠️ Ukuran file terlalu besar. Maksimal 5MB.';
+            errorEl.style.display = 'block';
+        }
+        return;
+    }
+    
+    // VALIDASI EKSTENSI FILE
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+    const extension = file.name.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(extension)) {
+        if (errorEl) {
+            errorEl.textContent = '⚠️ Format file tidak didukung. Gunakan JPG, JPEG, PNG, atau PDF.';
+            errorEl.style.display = 'block';
+        }
+        return;
+    }
+    
+    if (errorEl) {
+        errorEl.style.display = 'none';
+    }
+    
+    // PROSES UPLOAD
+    const submitBtn = document.getElementById('uploadDokumenSubmit');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Uploading...';
+    
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.message || 'Server error');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response:', data);
+        
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeModal('uploadDokumenModal');
+            setTimeout(() => window.location.reload(), 500);
+        } else {
+            if (data.errors) {
+                const firstError = Object.values(data.errors)[0];
+                if (Array.isArray(firstError)) {
+                    showToast(firstError[0], 'error');
+                } else {
+                    showToast(firstError || 'Terjadi kesalahan', 'error');
+                }
+            } else {
+                showToast(data.message || 'Terjadi kesalahan', 'error');
+            }
+        }
+    })
+    .catch(err => {
+        console.error('Upload error:', err);
+        showToast('❌ ' + (err.message || 'Terjadi kesalahan server'), 'error');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
+
+// DROP ZONE EVENTS
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('upload_dokumen_file');
+    const uploadText = document.getElementById('uploadText');
+    const fileName = document.getElementById('uploadFileName');
+
+    if (dropZone && fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                const file = this.files[0];
+                uploadText.textContent = '📄 File siap diupload';
+                fileName.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+                fileName.style.display = 'block';
+                dropZone.style.borderColor = '#07573c';
+                dropZone.style.background = '#f0f9f5';
+                dropZone.classList.add('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#07573c';
+            this.style.background = '#f0f9f5';
+            this.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            if (!this.contains(e.relatedTarget)) {
+                this.style.borderColor = '#dce2e0';
+                this.style.background = '#fafcfb';
+                this.classList.remove('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#dce2e0';
+            this.style.background = '#fafcfb';
+            this.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                const file = files[0];
+                uploadText.textContent = '📄 File siap diupload';
+                fileName.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+                fileName.style.display = 'block';
+                this.style.borderColor = '#07573c';
+                this.style.background = '#f0f9f5';
+                this.classList.add('drag-over');
+            }
+        });
+    }
+});
 // ============================================
 // AUTO-CLOSE TOAST
 // ============================================

@@ -998,7 +998,7 @@
                 BRAND
             ===================================================== --}}
             <div class="sidebar-header">
-                <a href="#" class="brand">
+                <a href="{{ route('keabsahan.dashboard') }}" class="brand">
                     <img src="{{ asset('images/aktalink-logo.png') }}" alt="AKTALINK" class="brand-logo">
                     <div class="brand-text">
                         <div class="brand-name">
@@ -1023,7 +1023,7 @@
 
                         {{-- DASHBOARD --}}
                         <li class="nav-item">
-                            <a href="#" class="nav-link {{ request()->routeIs('keabsahan.dashboard') ? 'active' : '' }}">
+                            <a href="{{ route('keabsahan.dashboard') }}" class="nav-link {{ request()->routeIs('keabsahan.dashboard') ? 'active' : '' }}">
                                 <i class="nav-icon" data-lucide="layout-dashboard"></i>
                                 <span class="nav-text">Dashboard</span>
                             </a>
@@ -1046,23 +1046,6 @@
                         </li>
                     </ul>
                 </div>
-
-                {{-- LAYANAN --}}
-                <div class="nav-section">
-                    <span class="nav-section-title">Layanan</span>
-                    <ul class="nav-list">
-
-                        {{-- KEABSAHAN --}}
-                        <li class="nav-item">
-                            <a href="#" class="nav-link {{ request()->routeIs('keabsahan.layanan.keabsahan') ? 'active' : '' }}">
-                                <i class="nav-icon" data-lucide="shield-check"></i>
-                                <span class="nav-text">Keabsahan</span>
-                            </a>
-                        </li>
-
-                    </ul>
-                </div>
-
             </div>
 
             {{-- =====================================================

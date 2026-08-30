@@ -173,6 +173,8 @@ Route::middleware(['auth', 'role:kutipan_kedua'])
         Route::post('/{permohonan}/tambah-komentar', [KutipanKeduaPermohonanController::class, 'tambahKomentar'])->name('tambah-komentar');
         Route::get('/{permohonan}/get-komentar', [KutipanKeduaPermohonanController::class, 'getKomentar'])->name('get-komentar');
         Route::post('/{permohonan}/proses', [KutipanKeduaPermohonanController::class, 'proses'])->name('proses');
+        Route::post('/{permohonan}/upload-dokumen', [KutipanKeduaPermohonanController::class, 'uploadDokumen'])->name('upload-dokumen');
+        Route::delete('/{permohonan}/dokumen/{dokumenId}', [KutipanKeduaPermohonanController::class, 'deleteDokumen'])->name('delete-dokumen');
     });
     });
 
@@ -200,7 +202,9 @@ Route::middleware(['auth', 'role:keabsahan'])
         Route::post('/{permohonan}/tambah-komentar', [KeabsahanPermohonanController::class, 'tambahKomentar'])->name('tambah-komentar');
         Route::get('/{permohonan}/get-komentar', [KeabsahanPermohonanController::class, 'getKomentar'])->name('get-komentar');
         Route::post('/{permohonan}/proses', [KeabsahanPermohonanController::class, 'proses'])->name('proses');
-    });
+        Route::post('/{permohonan}/upload-dokumen', [KeabsahanPermohonanController::class, 'uploadDokumen'])->name('upload-dokumen');
+        Route::delete('/{permohonan}/dokumen/{dokumenId}', [KeabsahanPermohonanController::class, 'deleteDokumen'])->name('delete-dokumen');
+        });
     });
 Route::middleware(['auth', 'role:surat_pengantar'])
     ->prefix('surat-pengantar')
@@ -226,6 +230,8 @@ Route::middleware(['auth', 'role:surat_pengantar'])
         Route::post('/{permohonan}/tambah-komentar', [SuratPengantarPermohonanController::class, 'tambahKomentar'])->name('tambah-komentar');
         Route::get('/{permohonan}/get-komentar', [SuratPengantarPermohonanController::class, 'getKomentar'])->name('get-komentar');
         Route::post('/{permohonan}/proses', [SuratPengantarPermohonanController::class, 'proses'])->name('proses');
+        Route::post('/{permohonan}/upload-dokumen', [SuratPengantarPermohonanController::class, 'uploadDokumen'])->name('upload-dokumen');
+        Route::delete('/{permohonan}/dokumen/{dokumenId}', [SuratPengantarPermohonanController::class, 'deleteDokumen'])->name('delete-dokumen');
     });
     });
 Route::middleware(['auth'])->post('/logout', [AuthController::class, 'logout'])->name('logout');
